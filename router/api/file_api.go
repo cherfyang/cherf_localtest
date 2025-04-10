@@ -12,4 +12,5 @@ func RegisterFileRoutes(rf *gin.RouterGroup) {
 	rf.POST("/file/sendfile", file_handle.SendFileHandle)
 
 	rf.POST("/file/categorybyname", file_handle.FileCategoryByFileNme)
+	rf.POST("/file/upload/:namepath",file_handle.uploadHandler)
 }
