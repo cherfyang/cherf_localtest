@@ -1,7 +1,7 @@
 package main
 
 import (
-	"awesomeProject1/router"
+	"cherf_localtest/router"
 	"github.com/gin-gonic/gin"
 )
 

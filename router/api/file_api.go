@@ -1,7 +1,7 @@
 package api
 
 import (
-	"awesomeProject1/handler/file_handle"
+	"cherf_localtest/handler/file_handle"
 	"github.com/gin-gonic/gin"
 )
 

@@ -1,6 +1,6 @@
 package sdk
 
-import "awesomeProject1/util"
+import "cherf_localtest/util"
 
 func CategoryFILE(path, keyWords string) {
 	url := "http://localhost:8080/api/v1/file/categorybyname"
