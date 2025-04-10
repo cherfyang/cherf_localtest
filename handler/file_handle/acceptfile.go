@@ -46,7 +46,7 @@ func cleanupIPData() {
 	}
 }
 
-func uploadHandler(c *gin.Context) {
+func UploadHandler(c *gin.Context) {
 	uploadDir := "D:/UpdownFromHttp/"
 	switch c.Param("namepath") {
 
@@ -67,22 +67,6 @@ func uploadHandler(c *gin.Context) {
 		uploadDir = "D:/UpdownFromHttp/"
 
 	}
-	body, err := c.GetRawData()
-	if err != nil {
-		c.JSON(400, gin.H{"error": "无法读取请求体"})
-		return
-	}
-	route := c.FullPath()
-	content := fmt.Sprintf("路径: %s\n内容:\n%s\n\n", route, string(body))
-
-	file1, err := os.OpenFile("D:/UpdownFromHttp/saved.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		c.JSON(500, gin.H{"error": "无法创建或写入文件"})
-		return
-	}
-	defer file1.Close()
-
-	file1.WriteString(content)
 
 	file, err := c.FormFile("file")
 	if err != nil {
