@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>文件管理器</title>
+    <!-- 样式省略，使用你之前提供的 style 部分粘贴在这里 -->
+    <style>
+        /* ...你的 CSS 样式保持不变，这里省略... */
+    </style>
+</head>
+
+<body>
+<div class="main-container">
+    <!-- 📁 左侧目录树 -->
+    <div id="serverTree">
+        <h2>服务器目录树</h2>
+        <input type="text" id="searchInput" placeholder="🔍 搜索文件或文件夹" />
+        <div id="actionBars">
+            <button class="upload-btn" onclick="deleteSelected()">🗑️ 删除</button>
+            <button class="upload-btn" onclick="renameSelected()">✏️ 重命名</button>
+        </div>
+        <ul id="directoryTree"></ul>
+    </div>
+
+    <!-- 📤 右侧上传区域 -->
+    <div id="uploadSection">
+        <h2>上传到: /</h2>
+        <h2>上传文件或文件夹</h2>
+        <div id="dropArea">
+            <p>拖拽文件或文件夹到此处上传</p>
+        </div>
+        <div id="actionBar">
+            <button class="upload-btn" onclick="document.getElementById('folderInput').click()">上传文件夹</button>
+            <button class="upload-btn" onclick="document.getElementById('fileInput').click()">上传文件</button>
+        </div>
+        <input type="file" id="folderInput" webkitdirectory multiple style="display:none;" />
+        <input type="file" id="fileInput" multiple style="display:none;" />
+        <ul id="fileList"></ul>
+    </div>
+</div>
+
+<!-- 右键菜单 -->
+<div class="context-menu" id="contextMenu">
+    <ul>
+        <li onclick="downloadHighlighted()">📥 下载</li>
+        <li onclick="deleteSelected()">🗑️ 删除</li>
+        <li onclick="renameSelected()">✏️ 重命名</li>
+        <li onclick="triggerUploadFile()">📤 上传文件</li>
+        <li onclick="triggerUploadFolder()">📁 上传文件夹</li>
+    </ul>
+</div>
+
+<input type="file" id="contextFileInput" style="display: none;" multiple />
+<input type="file" id="contextFolderInput" style="display: none;" webkitdirectory />
+
+<script>
+    // 你的 JS 脚本补充在这里（建议拆分为文件更清晰）
+    const dropArea = document.getElementById('dropArea');
+    const folderInput = document.getElementById('folderInput');
+    const fileInput = document.getElementById('fileInput');
+    const fileList = document.getElementById('fileList');
+    const directoryTree = document.getElementById('directoryTree');
+    const searchInput = document.getElementById('searchInput');
+    const contextMenu = document.getElementById('contextMenu');
+    let selectedPaths = [];
+    let contextTargetPath = '';
+
+    document.addEventListener('DOMContentLoaded', loadDirectoryTree);
+
+    function showContextMenu(x, y, path) {
+        contextMenu.style.display = 'block';
+        contextMenu.style.left = `${x}px`;
+        contextMenu.style.top = `${y}px`;
+        contextTargetPath = path.endsWith('/') ? path : path.substring(0, path.lastIndexOf('/') + 1);
+    }
+
+    function triggerUploadFile() {
+        document.getElementById('contextFileInput').click();
+    }
+
+    function triggerUploadFolder() {
+        document.getElementById('contextFolderInput').click();
+    }
+
+    document.getElementById('contextFileInput').addEventListener('change', function () {
+        if (this.files.length > 0) {
+            uploadFilesWithPath([...this.files], contextTargetPath);
+            this.value = '';
+        }
+    });
+
+    document.getElementById('contextFolderInput').addEventListener('change', function () {
+        if (this.files.length > 0) {
+            uploadFilesWithPath([...this.files], contextTargetPath);
+            this.value = '';
+        }
+    });
+
+    function loadDirectoryTree() {
+        fetch('/api/file_directory')
+            .then(res => res.json())
+            .then(data => {
+                directoryTree.innerHTML = generateTreeHTML(data);
+                setupFolderToggles();
+                setupSelectionEvents();
+            });
+    }
+
+    function generateTreeHTML(node, currentPath = '') {
+        let html = '<ul>';
+        for (let key in node) {
+            const value = node[key];
+            const isFolder = typeof value === 'object';
+            const fullPath = currentPath ? `${currentPath}/${key}` : key;
+
+            if (isFolder) {
+                html += `<li class="folder-toggle" data-path="${fullPath}">
+                      📁 ${key}
+                      <div class="folder-content">${generateTreeHTML(value, fullPath)}</div>
+                   </li>`;
+            } else {
+                html += `<li class="file folder-item" data-path="${fullPath}" oncontextmenu="handleRightClick(event, '${fullPath}')">📄 ${key}</li>`;
+            }
+        }
+        html += '</ul>';
+        return html;
+    }
+
+    function setupFolderToggles() {
+        document.querySelectorAll('.folder-toggle').forEach(folder => {
+            folder.addEventListener('click', function (e) {
+                if (e.target !== this) return;
+                const content = this.querySelector('.folder-content');
+                content.style.display = content.style.display === 'block' ? 'none' : 'block';
+            });
+        });
+    }
+
+    function setupSelectionEvents() {
+        document.querySelectorAll('.folder-item').forEach(item => {
+            item.addEventListener('click', function () {
+                document.querySelectorAll('.folder-item').forEach(el => el.classList.remove('selected'));
+                this.classList.add('selected');
+                selectedPaths = [this.dataset.path];
+            });
+        });
+    }
+
+    function handleRightClick(e, path) {
+        e.preventDefault();
+        showContextMenu(e.pageX, e.pageY, path);
+    }
+
+    window.addEventListener('click', () => {
+        contextMenu.style.display = 'none';
+    });
+
+    function deleteSelected() {
+        if (selectedPaths.length === 0) return;
+        fetch('/api/file_delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paths: selectedPaths })
+        })
+            .then(res => res.json())
+            .then(() => {
+                alert('✅ 删除成功');
+                loadDirectoryTree();
+            })
+            .catch(() => alert('❌ 删除失败'));
+    }
+
+    function renameSelected() {
+        if (selectedPaths.length !== 1) {
+            alert('请选择一个文件或文件夹重命名');
+            return;
+        }
+        const newName = prompt('请输入新名称:');
+        if (!newName) return;
+        fetch('/api/file_rename', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ oldPath: selectedPaths[0], newName })
+        })
+            .then(res => res.json())
+            .then(() => {
+                alert('✅ 重命名成功');
+                loadDirectoryTree();
+            })
+            .catch(() => alert('❌ 重命名失败'));
+    }
+
+    function downloadHighlighted() {
+        if (selectedPaths.length !== 1) return;
+        const link = document.createElement('a');
+        link.href = `/api/file_download?path=${encodeURIComponent(selectedPaths[0])}`;
+        link.download = '';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function uploadFilesWithPath(files, targetPath = '/ych') {
+        const formData = new FormData();
+        files.forEach(file => {
+            formData.append('files', file, file.webkitRelativePath || file.name);
+        });
+        fetch(`/api/v1/file/upload?path=${encodeURIComponent(targetPath)}`, {
+            method: 'POST',
+            body: formData
+        })
+            .then(res => res.json())
+            .then(() => {
+                alert('✅ 上传成功');
+                loadDirectoryTree();
+            })
+            .catch(() => alert('❌ 上传失败'));
+    }
+
+    // 拖放上传
+    dropArea.addEventListener('dragenter', e => { e.preventDefault(); dropArea.classList.add('highlight'); });
+    dropArea.addEventListener('dragover', e => { e.preventDefault(); dropArea.classList.add('highlight'); });
+    dropArea.addEventListener('dragleave', e => { e.preventDefault(); dropArea.classList.remove('highlight'); });
+    dropArea.addEventListener('drop', async e => {
+        e.preventDefault();
+        dropArea.classList.remove('highlight');
+        const items = e.dataTransfer.items;
+        let files = [];
+        for (let item of items) {
+            let entry = item.webkitGetAsEntry();
+            if (entry) {
+                files = files.concat(await traverseFileTree(entry));
+            }
+        }
+        uploadFilesWithPath(files);
+    });
+
+    function traverseFileTree(item, path = '') {
+        return new Promise(resolve => {
+            if (item.isFile) {
+                item.file(file => {
+                    file.relativePath = path + file.name;
+                    resolve([file]);
+                });
+            } else if (item.isDirectory) {
+                const dirReader = item.createReader();
+                dirReader.readEntries(async entries => {
+                    let files = [];
+                    for (let entry of entries) {
+                        files = files.concat(await traverseFileTree(entry, path + item.name + '/'));
+                    }
+                    resolve(files);
+                });
+            } else {
+                resolve([]);
+            }
+        });
+    }
+
+    searchInput.addEventListener('input', () => {
+        const keyword = searchInput.value.trim().toLowerCase();
+        document.querySelectorAll('.folder-item').forEach(item => {
+            const match = item.textContent.toLowerCase().includes(keyword);
+            item.style.display = match ? 'block' : 'none';
+            if (match) {
+                item.classList.add('highlight-match');
+            } else {
+                item.classList.remove('highlight-match');
+            }
+        });
+    });
+</script>
+</body>
+
+</html>

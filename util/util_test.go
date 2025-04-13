@@ -1,0 +1,9 @@
+package util
+
+import "testing"
+
+func Test(t *testing.T) {
+	sss := "D%3A%5Cname_file%5Cgky6666%5C%E6%B8%AF%E4%B8%AD%E6%B7%B1%E7%BB%8F%E7%AE%A1%E5%AD%A6%E9%99%A221%E6%B8%A3%E7%94%B7%E5%87%BA%E8%BD%A83%E5%A5%B3%E5%A4%9A%E6%AC%A1%E5%AB%96%E5%A8%BC%E8%A2%AB%E6%8A%A5%E5%A4%8D%E6%8B%8D%E8%A3%B8%E7%85%A7%E8%A2%AB%E6%89%92%E5%87%BA%E5%8F%8A%E8%81%8A%E5%A4%A9%E8%AE%B0%E5%BD%95%E6%88%AA%E5%9B%BE%E6%B5%81%E5%87%BA(3)"
+
+	println(CheckPath(sss))
+}

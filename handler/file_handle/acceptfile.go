@@ -2,6 +2,9 @@ package file_handle
 
 //
 import (
+	_const "cherf_localtest/const"
+	"cherf_localtest/log"
+	"cherf_localtest/util"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -12,30 +15,10 @@ import (
 	"time"
 )
 
-const (
-	maxFileSize      = 1 << 30                        // 1GB
-	maxIPSize        = 1 << 30                        // 1GB per 10 min
-	requiredPassword = "securepassword"               // 上传大文件需要的密码
-	logFilePath      = "D:/UpdownFromHttp/upload.log" // 日志文件
-)
-
 var (
 	ipUploadMap = make(map[string]int64)
 	ipLock      = sync.Mutex{}
 )
-
-// 记录日志
-func logUpload(clientIP, fileName string, fileSize int64) {
-	f, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		fmt.Println("Failed to open log file:", err)
-		return
-	}
-	defer f.Close()
-
-	logEntry := fmt.Sprintf("[%s] IP: %s, File: %s, Size: %d bytes\n", time.Now().Format("2006-01-02 15:04:05"), clientIP, fileName, fileSize)
-	f.WriteString(logEntry)
-}
 
 func cleanupIPData() {
 	for {
@@ -47,27 +30,11 @@ func cleanupIPData() {
 }
 
 func UploadHandler(c *gin.Context) {
-	uploadDir := "D:/UpdownFromHttp/"
-	switch c.Param("namepath") {
-
-	case "goProject":
-		uploadDir = "D:/GoProject/"
-	case "yfl":
-		uploadDir = "D:/name_file/yflFile/"
-	case "ych":
-		uploadDir = "D:/name_file/ychFile/"
-	case "lsn":
-		uploadDir = "D:/name_file/lsnFile/"
-	case "cyw":
-		uploadDir = "D:/name_file/cywFile/"
-	case "gky6666":
-		uploadDir = "D:/name_file/gky6666/"
-
-	default:
-		uploadDir = "D:/UpdownFromHttp/"
-
-	}
-
+	start := time.Now()
+	uploadDir := c.Query("namepath")
+	from := c.GetHeader("Sec-Ch-Ua-Platform")
+	Agent := c.GetHeader("User-Agent")
+	util.DebugRequest(c)
 	file, err := c.FormFile("file")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Error retrieving file"})
@@ -76,20 +43,22 @@ func UploadHandler(c *gin.Context) {
 
 	fileSize := file.Size
 	clientIP := c.ClientIP()
-	password := c.PostForm("password")
+	if clientIP != "::1" {
+		password := c.PostForm("password")
 
-	// 记录IP上传大小
-	ipLock.Lock()
-	totalSize := ipUploadMap[clientIP] + fileSize
-	if fileSize > maxFileSize || totalSize > maxIPSize {
-		if password != requiredPassword {
-			ipLock.Unlock()
-			c.JSON(http.StatusForbidden, gin.H{"error": "File too large. Enter password to continue."})
-			return
+		// 记录IP上传大小
+		ipLock.Lock()
+		totalSize := ipUploadMap[clientIP] + fileSize
+		if fileSize > _const.MaxFileSize || totalSize > _const.MaxIPSize {
+			if password != _const.RequiredPassword {
+				ipLock.Unlock()
+				c.JSON(http.StatusForbidden, gin.H{"error": "File too large. Enter password to continue."})
+				return
+			}
 		}
+		ipUploadMap[clientIP] = totalSize
+		ipLock.Unlock()
 	}
-	ipUploadMap[clientIP] = totalSize
-	ipLock.Unlock()
 
 	// 确保目录存在
 	if _, err := os.Stat(uploadDir); os.IsNotExist(err) {
@@ -101,9 +70,12 @@ func UploadHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error saving file"})
 		return
 	}
-
-	logUpload(clientIP, file.Filename, fileSize) // 记录上传日志
-	c.JSON(http.StatusOK, gin.H{"message": "File uploaded successfully!"})
+	useTime := util.TimeUsed(start)
+	log.LogUpload(clientIP, file.Filename, fileSize, uploadDir, Agent, from, useTime) // 记录上传日志
+	fmt.Println("耗时：", time.Since(start))
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "File uploaded successfully!"})
 }
 
 func getFielName(filename string, searchDir string) (string, error) {

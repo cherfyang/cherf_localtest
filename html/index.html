@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>文件管理</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f6f9;
+      margin: 0;
+      padding: 20px;
+    }
+    h2 {
+      margin-bottom: 10px;
+    }
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .controls button {
+      background-color: #007bff;
+      border: none;
+      color: white;
+      padding: 6px 12px;
+      margin-right: 10px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .controls button:hover {
+      background-color: #0056b3;
+    }
+    .path-info {
+      margin-top: 5px;
+      font-size: 14px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    th, td {
+      text-align: left;
+      padding: 12px 10px;
+    }
+    th {
+      background-color: #e9ecef;
+    }
+    tr:nth-child(even) {
+      background-color: #f8f9fa;
+    }
+    tr:hover {
+      background-color: #e2e6ea;
+    }
+    .checkbox-col {
+      width: 40px;
+    }
+    .size-col {
+      text-align: right;
+      width: 120px;
+      font-size: 14px;
+      color: #555;
+    }
+    .tip {
+      font-size: 13px;
+      color: #888;
+      text-align: right;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+
+<h2>文件列表</h2>
+
+<div class="controls">
+  <div>
+    <button onclick="goBack()">返回上一级</button>
+    <button onclick="downloadSelected()">下载文件</button>
+    <input type="file" id="file-upload" />
+    <button onclick="uploadFile()">上传文件</button>
+  </div>
+  <div id="download-progress" style="display: none;">下载中...</div>
+</div>
+
+<div class="path-info" id="current-path">当前路径：D:/name_file/ychFile</div>
+
+<table>
+  <thead>
+  <tr>
+    <th class="checkbox-col"></th>
+    <th>文件名称</th>
+    <th class="size-col">大小</th>
+  </tr>
+  </thead>
+  <tbody id="file-table">
+  </tbody>
+</table>
+
+<div class="tip">文件最大传输速度：10Mbps ≈ 1.25MB/s</div>
+
+<script>
+  let currentPath = "";
+
+  function loadFiles(namepath = "") {
+    currentPath = namepath;
+
+    const pathParts = window.location.pathname.split('/');
+    path = pathParts[2] || "xxx"; // 默认 namepath，默认值为 xxx
+
+    fetch('/api/v1/file/list?namepath=' + encodeURIComponent(path)+`&path=`+encodeURIComponent(namepath) )
+            .then(response => response.json())
+            .then(data => {
+              // ✅ 接口返回的 currentPath 才是真正路径
+              document.getElementById('current-path').innerText = "当前路径：" + data.path;
+              currentPath=data.path
+              const table = document.getElementById('file-table');
+              table.innerHTML = "";
+
+              data.files.forEach(file => {
+                const row = document.createElement('tr');
+
+                const checkboxCell = document.createElement('td');
+                const checkbox = document.createElement('input');
+                checkbox.type = "checkbox";
+                checkbox.value = file.path;
+                if (file.isDir) checkbox.disabled = true; // 目录不能下载
+                checkboxCell.appendChild(checkbox);
+
+                const nameCell = document.createElement('td');
+                nameCell.textContent = file.name;
+                nameCell.style.cursor = "pointer";
+                nameCell.onclick = () => {
+                  if (file.isDir) {
+                    loadFiles(file.path); // 进入子目录
+                  }
+                };
+
+                const sizeCell = document.createElement('td');
+                sizeCell.className = "size-col";
+                sizeCell.textContent = file.isDir ? "--" : formatBytes(file.size);
+
+                row.appendChild(checkboxCell);
+                row.appendChild(nameCell);
+                row.appendChild(sizeCell);
+                table.appendChild(row);
+              });
+            });
+  }
+
+  function formatBytes(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024, sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+
+  function goBack() {
+    if (!currentPath || currentPath === "D:/name_file/ychFile") return;
+
+    const parts = currentPath.replaceAll('\\', '/').split('/');
+    parts.pop(); // 移除当前目录
+    const parent = parts.join('/');
+    loadFiles(parent);
+  }
+
+  function downloadSelected() {
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+    if (checkboxes.length === 0) return;
+
+    document.getElementById('download-progress').style.display = 'inline';
+
+    checkboxes.forEach((checkbox, index) => {
+      const fullPath = checkbox.value.replace(/\\/g, '/');
+      fetch( '/api/v1/file/download?file=' + encodeURIComponent(fullPath))
+              .then(response => {
+                if (response.ok) {
+                  return response.blob().then(blob => {
+                    const link = document.createElement('a');
+                    link.href = window.URL.createObjectURL(blob);
+                    link.download = fullPath.split('/').pop(); // 正斜杠分割取最后一段
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  });
+                } else {
+                  alert('文件下载失败：' + fullPath);
+                }
+              });
+    });
+
+
+    setTimeout(() => {
+      document.getElementById('download-progress').style.display = 'none';
+    }, 3000);
+  }
+
+  window.onload = () => {
+    loadFiles();
+  };
+  function uploadFile() {
+    const fileInput = document.getElementById('file-upload');
+    const file = fileInput.files[0];
+    if (!file) {
+      alert("请选择文件！");
+      return;
+    }
+
+    // 获取当前展示路径，假设你在 loadFiles 中设置了 currentPath
+    const uploadPath = currentPath || ""; // currentPath 是全局变量，用来保存当前目录路径
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    fetch('/api/v1/file/upload?namepath='+encodeURIComponent(uploadPath), {
+      method: 'POST',
+      body: formData
+    })
+            .then(res => res.json())
+            .then(data => {
+              if (data.success) {
+                alert("上传成功！");
+                loadFiles(uploadPath); // 刷新当前目录
+              } else {
+                alert("上传失败：" + data.message);
+              }
+            })
+            .catch(err => {
+              console.error(err);
+              alert("上传异常！");
+            });
+    loadFiles(uploadPath)
+  }
+</script>
+
+</body>
+</html>

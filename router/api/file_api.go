@@ -12,5 +12,7 @@ func RegisterFileRoutes(rf *gin.RouterGroup) {
 	rf.POST("/file/sendfile", file_handle.SendFileHandle)
 
 	rf.POST("/file/categorybyname", file_handle.FileCategoryByFileNme)
-	rf.POST("/file/upload/:namepath", file_handle.UploadHandler)
+	rf.POST("/file/upload", file_handle.UploadHandler)
+	rf.GET("/file/list", file_handle.ListHandler)
+	rf.GET("/file/download", file_handle.DownloadFile)
 }

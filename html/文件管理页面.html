@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>远程文件管理系统</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+    th, td { padding: 8px; border: 1px solid #ccc; }
+    .file-row:hover { background-color: #f0f0f0; }
+  </style>
+</head>
+<body>
+
+<h2>远程文件管理系统</h2>
+
+<!-- 当前路径 -->
+<div>
+  <label>当前路径：</label>
+  <input type="text" id="path" value="/" style="width: 300px;">
+  <button onclick="loadFiles()">刷新</button>
+</div>
+
+
+<h2>上传文件</h2>
+<form id="upload-form">
+  <label htmlFor="namepath">您的标识：</label>
+  <input type="text" id="namepath" name="namepath" required/>
+  <br/><br/>
+  <label htmlFor="file">选择文件：</label>
+  <input type="file" id="file" name="file" required/>
+  <br/><br/>
+  <button type="submit">上传</button>
+</form>
+
+
+
+<!-- 文件分类 -->
+<h3>文件分类</h3>
+
+<!-- 根据目录后缀自动分类 -->
+<form id="categoryByExtForm">
+  <label>路径（后缀分类）：</label>
+  <input type="text" id="extCategoryPath" placeholder="/your/path" style="width: 300px;">
+  <button type="submit">按后缀分类</button>
+</form>
+
+<!-- 根据名称分类 -->
+<form id="categoryByNameForm">
+  <label>路径：</label>
+  <input type="text" id="nameCategoryPath" placeholder="/your/path" style="width: 300px;">
+  <label>关键字：</label>
+  <input type="text" id="categoryKeywords" placeholder="zip-txt-pdf" style="width: 200px;">
+  <button type="submit">按名称分类</button>
+</form>
+
+<hr>
+
+<!-- 文件列表 -->
+<table>
+  <thead>
+  <tr><th>名称</th><th>类型</th><th>操作</th></tr>
+  </thead>
+  <tbody id="fileList">
+  <!-- 动态插入文件列表 -->
+  </tbody>
+</table>
+
+<script>
+  // 加载文件列表（模拟文件分类接口）
+  function loadFiles() {
+    const path = document.getElementById('path').value;
+
+    // FileCategory（后端接口：X-Source-Dir）
+    fetch('/api/v1/file/category', {
+      method: 'POST',
+      headers: {'X-Source-Dir': path}
+    })
+            .then(res => res.json())
+            .then(files => {
+              const tbody = document.getElementById('fileList');
+              tbody.innerHTML = '';
+              files.forEach(file => {
+                const tr = document.createElement('tr');
+                tr.className = 'file-row';
+                tr.innerHTML = `
+        <td>${file.name}</td>
+        <td>${file.type}</td>
+        <td>
+          ${file.type === 'dir' ? `<button onclick="goInto('${path}/${file.name}')">进入</button>` : ''}
+          <button onclick="deleteFile('${path}/${file.name}')">删除</button>
+        </td>`;
+                tbody.appendChild(tr);
+              });
+            });
+  }
+
+  // 上传文件
+
+
+
+  <h2>上传文件</h2>
+  <form id="upload-form">
+    <label for="namepath">目标路径标识（namepath）：</label>
+    <input type="text" id="namepath" name="namepath" required />
+    <br /><br />
+    <label for="file">选择文件：</label>
+    <input type="file" id="file" name="file" required />
+    <br /><br />
+    <button type="submit">上传</button>
+  </form>
+
+  <!-- 进度条区域 -->
+  <div id="progress-container" style="margin-top: 10px; display: none;">
+    <progress id="upload-progress" value="0" max="100" style="width: 300px;"></progress>
+    <span id="progress-text">0%</span>
+  </div>
+
+
+    document.getElementById('upload-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    const fileInput = document.getElementById('file');
+    const namepathInput = document.getElementById('namepath');
+    const file = fileInput.files[0];
+    const namepath = namepathInput.value.trim();
+
+    if (!file || !namepath) {
+    alert('请填写 namepath 并选择文件');
+    return;
+  }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `/api/v1/file/upload/${encodeURIComponent(namepath)}`);
+
+    // 显示进度条容器
+    document.getElementById('progress-container').style.display = 'block';
+
+    // 监听进度事件
+    xhr.upload.onprogress = function (event) {
+    if (event.lengthComputable) {
+    const percent = Math.round((event.loaded / event.total) * 100);
+    document.getElementById('upload-progress').value = percent;
+    document.getElementById('progress-text').innerText = percent + '%';
+  }
+  };
+
+    // 成功回调
+    xhr.onload = function () {
+    if (xhr.status === 200) {
+    alert('上传成功');
+  } else {
+    alert('上传失败: ' + xhr.responseText);
+  }
+  };
+
+    // 错误回调
+    xhr.onerror = function () {
+    alert('上传出错');
+  };
+
+    xhr.send(formData);
+  });
+
+
+
+// 按文件后缀分类
+document.getElementById('categoryByExtForm').addEventListener('submit', function(e) {
+e.preventDefault();
+const path = document.getElementById('extCategoryPath').value;
+fetch('/api/v1/file/category', {
+method: 'POST',
+headers: {
+'X-Source-Dir': path
+}
+}).then(res => {
+if (res.ok) {
+alert('分类成功（按后缀）');
+loadFiles();
+} else {
+alert('分类失败');
+}
+});
+});
+
+// 按关键词分类
+document.getElementById('categoryByNameForm').addEventListener('submit', function(e) {
+e.preventDefault();
+const path = document.getElementById('nameCategoryPath').value;
+const keywords = document.getElementById('categoryKeywords').value;
+fetch('/api/v1/file/categorybyname', {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json',
+'X-Source-Dir': path
+},
+body: JSON.stringify({
+'file-name': keywords
+})
+}).then(res => {
+if (res.ok) {
+alert('分类成功（按名称）');
+loadFiles();
+} else {
+alert('分类失败');
+}
+});
+});
+
+// 进入子目录
+function goInto(newPath) {
+document.getElementById('path').value = newPath;
+    loadFiles();
+  }
+
+  // 删除文件
+  function deleteFile(filePath) {
+    if (!confirm(`确定要删除 ${filePath} 吗？`)) return;
+    fetch('/api/v1/file/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: filePath })
+    })
+            .then(res => {
+              if (res.ok) {
+                alert('删除成功');
+                loadFiles();
+              } else {
+                alert('删除失败');
+              }
+            });
+  }
+
+  // 页面加载时自动加载默认目录
+  window.onload = loadFiles;
+</script>
+
+</body>
+</html>
