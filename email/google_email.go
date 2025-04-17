@@ -5,7 +5,7 @@ import (
 	"log"
 )
 
-func sendEmail(msg EmailMsg) {
+func sendEmail() {
 	// 构建邮件
 	m := gomail.NewMessage()
 
@@ -13,14 +13,13 @@ func sendEmail(msg EmailMsg) {
 	m.SetHeader("From", "mengxiy081@gmail.com")
 
 	// 收件人
-	m.SetHeader("To", msg.To)
+	m.SetHeader("To", "2637206496@qq.com")
 
 	// 邮件标题
-	m.SetHeader("Subject", msg.Title)
+	m.SetHeader("Subject", "Go 测试邮件")
 
 	// 邮件正文（HTML 或纯文本）
-	m.SetBody("text/html", msg.Body)
-	//m.SetBody("text/html", "<h1>Hello</h1><p>这是一封来自 Go 的测试邮件。</p>")
+	m.SetBody("text/html", "<h1>Hello</h1><p>这是一封来自 Go 的测试邮件。</p>")
 
 	// 设置 Gmail SMTP
 	d := gomail.NewDialer("smtp.gmail.com", 587, "mengxiy081@gmail.com", "cgaq kmcn octn dll v")
@@ -31,10 +30,4 @@ func sendEmail(msg EmailMsg) {
 	}
 
 	log.Println("发送成功")
-}
-
-type EmailMsg struct {
-	Title string
-	Body  string
-	To    string
 }
