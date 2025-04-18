@@ -5,7 +5,7 @@ import (
 	"log"
 )
 
-func sendEmail(text string) {
+func sendEmail() {
 	// 构建邮件
 	m := gomail.NewMessage()
 
