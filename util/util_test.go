@@ -1,23 +1,20 @@
 package util
 
 import (
+	"cherf_localtest/db"
 	"fmt"
-	"github.com/lionsoul2014/ip2region/binding/golang/xdb"
 	"testing"
 )
 
 func Test(t *testing.T) {
-
-	searcher, err := xdb.NewWithFileOnly("ip2region.xdb")
-	if err != nil {
-		panic(err)
+	s := db.Users{
+		Name:     "cherf_localtest",
+		Email:    "",
+		Password: "",
+		Token:    "",
+		Nickname: "",
 	}
-	defer searcher.Close()
-
-	ip := "8.8.8.8"
-	region, err := searcher.SearchByStr(ip)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("IP归属地:", region)
+	sMap, _ := StructToMap(s)
+	fmt.Println(s)
+	PrintMap(sMap)
 }

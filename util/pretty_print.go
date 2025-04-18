@@ -16,3 +16,11 @@ func PrettyPrintBody(body []byte) {
 	}
 	fmt.Println(prettyJSON.String())
 }
+func PrintMap(m map[string]interface{}) {
+	fmt.Println("{")
+	for k, v := range m {
+		fmt.Sprintln(k, ":", v)
+	}
+	fmt.Println("}")
+
+}

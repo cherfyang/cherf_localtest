@@ -1,18 +1,26 @@
 package db
 
 import (
-	"database/sql"
+	"fmt"
+	"github.com/google/uuid"
 	"testing"
 )
 
 func Test(t *testing.T) {
-	db, err := sql.Open("sqlite", "./dbfile/test.db")
-	if err != nil {
+	users := make([]Users, 0, 10)
 
+	for k := 0; k < 10; k++ {
+		token := uuid.New().String()
+		nn := fmt.Sprintf("mx%d", k)
+		n := fmt.Sprintf("ych%d", k)
+		users = append(users, Users{
+			Name:     n,
+			Email:    "test",
+			Password: "test",
+			Token:    token,
+			Nickname: nn,
+		})
 	}
-	fileds := make(map[string]string)
-	fileds = map[string]string{
-		"sss": ",,,",
-	}
-	CreateTable(db, "users", fileds)
+
+	fmt.Println(BatchCreate(users))
 }
