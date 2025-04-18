@@ -31,6 +31,7 @@ func InitDB() *gorm.DB {
 }
 
 // Users 表结构
+// 邮箱和 token 才是确认用户的凭证
 type Users struct {
 	ID        uint      `gorm:"primaryKey;autoIncrement" json:"id"`                      // 主键
 	Name      string    `gorm:"column:name;type:varchar(32);not null" json:"name"`       // 姓名
