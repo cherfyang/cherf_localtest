@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"testing"
+	"time"
 )
 
 func Test(t *testing.T) {
@@ -14,11 +15,15 @@ func Test(t *testing.T) {
 		nn := fmt.Sprintf("mx%d", k)
 		n := fmt.Sprintf("ych%d", k)
 		users = append(users, Users{
-			Name:     n,
-			Email:    "test",
-			Password: "test",
-			Token:    token,
-			Nickname: nn,
+			Name:      n,
+			Email:     "test",
+			Password:  "test",
+			Token:     token,
+			Nickname:  nn,
+			Role:      "",
+			Status:    0,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
 		})
 	}
 
