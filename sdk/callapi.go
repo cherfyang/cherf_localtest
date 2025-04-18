@@ -7,13 +7,14 @@ import (
 	"net/http"
 )
 
-func CallApi(method, url string, headers map[string]string, bodys []byte) []byte {
+// 用于直接调用api，传入方法和url即可
+func CallApi(method, url string, headers map[string]string, bodys []byte) ([]byte, *http.Response) {
 	client := &http.Client{}
 
 	req, err := http.NewRequest(method, url, bytes.NewBuffer(bodys))
 	if err != nil {
 		fmt.Println("请求创建失败:", err)
-		return nil
+		return nil, nil
 	}
 
 	for k, v := range headers {
@@ -23,7 +24,7 @@ func CallApi(method, url string, headers map[string]string, bodys []byte) []byte
 	res, err := client.Do(req)
 	if err != nil {
 		fmt.Println("请求失败:", err)
-		return nil
+		return nil, nil
 	}
 	defer res.Body.Close()
 
@@ -34,9 +35,9 @@ func CallApi(method, url string, headers map[string]string, bodys []byte) []byte
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		fmt.Println("读取响应失败:", err)
-		return nil
+		return nil, nil
 	}
 
 	fmt.Println("响应内容：", string(body))
-	return body
+	return body, res
 }

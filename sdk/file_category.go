@@ -11,6 +11,6 @@ func CategoryFILE(path, keyWords string) {
 		"X-Source-Dir": path,
 		"file-name":    keyWords,
 	}
-	resp := CallApi("POST", url, header, []byte{})
-	util.PrettyPrintBody(resp)
+	body, _ := CallApi("POST", url, header, []byte{})
+	util.PrettyPrintBody(body)
 }

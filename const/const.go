@@ -2,7 +2,7 @@ package _const
 
 const (
 	LogFilePath    = "D:\\name_file\\alllog\\uploadlog.log"
-	apiLogFilePath = "D:\\name_file\\alllog\\api_download.log"
+	ApiLogFilePath = "D:\\name_file\\alllog\\api_download.log"
 )
 const (
 	MaxFileSize      = 1 << 30          // 1GB

@@ -7,6 +7,9 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -39,7 +42,7 @@ func CheckPath(decodedPath string) bool {
 		// 解码失败就拒绝
 		return false
 	}
-	if (a == "D:\\HttpPublic/" || strings.Contains(a, "D:\\name_file")) && a != "D:\\name_file" {
+	if (a == "D:/HttpPublic/" || strings.Contains(a, "D:/name_file")) && a != "D:/name_file" {
 		return true
 	}
 	return false
@@ -114,4 +117,74 @@ func DebugRequest(c *gin.Context) {
 func TimeUsed(start time.Time) float64 {
 	time.Since(start)
 	return time.Since(start).Seconds()
+}
+
+func MaxLastBracketIndex(files []os.DirEntry, firstname string, lastname string) int {
+	names := make([]string, 0, len(files))
+
+	for _, v := range files {
+		pattern := fmt.Sprintf(`^%s(?:.*)?%s$`, regexp.QuoteMeta(firstname), regexp.QuoteMeta(lastname))
+		matched, _ := regexp.MatchString(pattern, v.Name())
+		if matched {
+			names = append(names, v.Name())
+		}
+	}
+	if len(names) == 0 {
+		return 1
+	}
+	re := regexp.MustCompile(`\(([^()]*)\)`)
+
+	maxIndex := 0
+
+	for _, name := range names {
+		matches := re.FindAllStringSubmatch(name, -1) // 获取所有匹配
+		if len(matches) == 0 {
+			continue
+		}
+		// 取最后一个括号中的数字
+		last := matches[len(matches)-1][1]
+		num, err := strconv.Atoi(last)
+		if err != nil {
+			continue
+		}
+		if num > maxIndex {
+			maxIndex = num
+		}
+	}
+	return maxIndex + 1
+}
+func GetFielName(filename string, searchDir string) (string, error) {
+	name := filename
+	lastname := ""
+	// 获取最后一个点的位置
+	dotIndex := strings.LastIndex(filename, ".")
+	if dotIndex == -1 {
+		// 文件没有扩展名
+		lastname = ""
+	} else {
+		lastname = filename[dotIndex:] // 包含点
+	}
+	firstname := filename[:dotIndex-1]
+
+	entries, err := os.ReadDir(searchDir)
+	if err != nil {
+		fmt.Sprintf("读取目录出错: %v\n", err)
+		return "", err
+	}
+	num := 0
+	flag := false
+	//判断是否有entrie==filename
+	for _, entry := range entries {
+		if entry.Name() != filename {
+			continue
+		} else {
+			flag = true
+		}
+	}
+	if flag {
+		num = MaxLastBracketIndex(entries, firstname, lastname)
+		return fmt.Sprintf("%s(%d)%s", firstname, num, lastname), nil
+	}
+	//
+	return name, nil
 }

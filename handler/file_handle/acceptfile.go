@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 )
@@ -64,7 +63,7 @@ func UploadHandler(c *gin.Context) {
 	if _, err := os.Stat(uploadDir); os.IsNotExist(err) {
 		os.MkdirAll(uploadDir, os.ModePerm)
 	}
-	file.Filename, err = getFielName(file.Filename, uploadDir)
+	file.Filename, err = util.GetFielName(file.Filename, uploadDir)
 	destination := filepath.Join(uploadDir, file.Filename)
 	if err := c.SaveUploadedFile(file, destination); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error saving file"})
@@ -76,38 +75,4 @@ func UploadHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "File uploaded successfully!"})
-}
-
-func getFielName(filename string, searchDir string) (string, error) {
-	name := filename
-	lastname := ""
-	// 获取最后一个点的位置
-	dotIndex := strings.LastIndex(filename, ".")
-	if dotIndex == -1 {
-		// 文件没有扩展名
-		lastname = ""
-	} else {
-		lastname = filename[dotIndex:] // 包含点
-	}
-	firstname := filename[:dotIndex-1]
-
-	entries, err := os.ReadDir(searchDir)
-	if err != nil {
-		fmt.Sprintf("读取目录出错: %v\n", err)
-		return "", err
-	}
-	maxi := 0
-	for i, entry := range entries {
-		if !entry.IsDir() && entry.Name() != filename {
-			return name, nil
-		}
-		if !entry.IsDir() && entry.Name() == fmt.Sprintf("%s(%d)%s", firstname, i, lastname) {
-			if maxi < i {
-				maxi = i
-			}
-		}
-	}
-	maxi++
-	name = fmt.Sprintf("%s(%d)%s", firstname, maxi, lastname)
-	return name, nil
 }
