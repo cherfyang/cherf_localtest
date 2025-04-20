@@ -1,28 +1,19 @@
 package db
 
 import (
-	"fmt"
-	"github.com/google/uuid"
+	_ "github.com/gin-gonic/gin"
 	"testing"
-	"time"
 )
 
 func Test(t *testing.T) {
 
-	token := uuid.New().String()
-	user := Users{
-		Name:      "杨超华",
-		Email:     "2637206496@qq.com",
-		Password:  "Yang2580..",
-		Token:     token,
-		Nickname:  "梦溪",
-		Role:      "systemManage",
-		Status:    1,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-	}
-	err := user.Create()
-	if err == nil {
-		fmt.Println("添加成功")
-	}
+	//web := Webs{
+	//	Title:       "搜狗",
+	//	URL:         "http://www.sougou.com",
+	//	Description: "一个搜索引擎",
+	//}
+	var webs []Webs
+	//webs = append(webs, web)
+	Find(&webs)
+	print(webs[0].Title)
 }

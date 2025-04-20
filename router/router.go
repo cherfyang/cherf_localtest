@@ -8,7 +8,7 @@ import (
 func RegisterRoutes(r *gin.Engine) {
 	v1 := r.Group("/api/v1")
 	{
-		api.RegisterTwilioRoutes(v1)
 		api.RegisterFileRoutes(v1)
+		api.RegisterWebRoutes(v1)
 	}
 }

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>网址收录</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-6">
+<div class="max-w-4xl mx-auto">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-3xl font-bold">mengxi</h1>
+        <div class="space-x-2">
+            <button id="add-btn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">➕ </button>
+            <button id="undo-btn" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">↩ </button>
+        </div>
+    </div>
+
+    <!-- 添加表单 -->
+    <div id="add-form" class="bg-white p-4 rounded-xl shadow mb-4 hidden">
+        <div class="mb-2">
+            <input type="text" id="title" placeholder="标题" class="w-full px-3 py-2 border rounded" />
+        </div>
+        <div class="mb-2">
+            <input type="text" id="description" placeholder="描述" class="w-full px-3 py-2 border rounded" />
+        </div>
+        <div class="mb-2">
+            <input type="text" id="url" placeholder="链接地址" class="w-full px-3 py-2 border rounded" />
+        </div>
+        <button id="submit-btn" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">提交</button>
+    </div>
+
+    <!-- 列表 -->
+    <div id="web-list" class="grid gap-4 md:grid-cols-2"></div>
+</div>
+
+<script>
+    const listApi = "/api/v1/webs/list";
+    const addApi = "/api/v1/webs/add";
+    const deleteApi = "/api/v1/webs/delete";
+    const undoApi = "/api/v1/webs/undo-delete";
+
+    function loadWebs() {
+        fetch(listApi)
+            .then(res => res.json())
+            .then(data => {
+                const container = document.getElementById("web-list");
+                container.innerHTML = "";
+                data.forEach(item => {
+                    const card = document.createElement("div");
+                    card.className = "bg-white p-4 rounded-xl shadow relative";
+
+                    card.innerHTML = `
+            <button class="absolute top-2 right-2 text-red-500 hover:text-red-700" onclick="confirmDelete(${item.id})">✖</button>
+            <h2 class="text-xl font-semibold text-blue-600 hover:underline break-all">
+              <a href="${item.url}" target="_blank">${item.title}</a>
+            </h2>
+            <p class="text-gray-600 mt-2">${item.description}</p>
+          `;
+
+                    container.appendChild(card);
+                });
+            });
+    }
+
+    function confirmDelete(id) {
+        if (confirm("确定要删除这个网站吗？")) {
+            deleteWeb(id);
+        }
+    }
+
+    function deleteWeb(id) {
+        fetch(`${deleteApi}?id=${id}`, {
+            method: "DELETE"
+        }).then(res => {
+            if (res.ok) {
+                loadWebs();
+                alert("删除成功");
+            } else {
+                alert("删除失败");
+            }
+        });
+    }
+
+    function undoDelete() {
+        fetch(undoApi, {
+            method: "POST"
+        })
+            .then(res => res.json())
+            .then(data => {
+                alert(data.message || "恢复成功");
+                loadWebs();
+            })
+            .catch(() => alert("没有可恢复的数据或操作失败"));
+    }
+
+    document.getElementById("add-btn").addEventListener("click", () => {
+        document.getElementById("add-form").classList.toggle("hidden");
+    });
+
+    document.getElementById("undo-btn").addEventListener("click", undoDelete);
+
+    document.getElementById("submit-btn").addEventListener("click", () => {
+        const title = document.getElementById("title").value.trim();
+        const description = document.getElementById("description").value.trim();
+        const url = document.getElementById("url").value.trim();
+        if (!title || !url) {
+            alert("标题和链接不能为空");
+            return;
+        }
+
+        fetch(addApi, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ title, description, url })
+        }).then(() => {
+            loadWebs();
+            document.getElementById("add-form").classList.add("hidden");
+            document.getElementById("title").value = "";
+            document.getElementById("description").value = "";
+            document.getElementById("url").value = "";
+        });
+    });
+
+    // 初始化加载
+    loadWebs();
+</script>
+</body>
+</html>

@@ -63,7 +63,7 @@ func UploadHandler(c *gin.Context) {
 	if _, err := os.Stat(uploadDir); os.IsNotExist(err) {
 		os.MkdirAll(uploadDir, os.ModePerm)
 	}
-	file.Filename, err = util.GetFielName(file.Filename, uploadDir)
+	file.Filename, err = util.GetFielName(uploadDir + "\\" + file.Filename)
 	destination := filepath.Join(uploadDir, file.Filename)
 	if err := c.SaveUploadedFile(file, destination); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error saving file"})

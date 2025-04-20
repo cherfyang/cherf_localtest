@@ -45,12 +45,16 @@ func ListHandler(c *gin.Context) {
 				size = info.Size()
 			}
 		}
-
+		edit := false
+		if IsEditable(entry.Name()) {
+			edit = true
+		}
 		files = append(files, gin.H{
-			"name":  entry.Name(),
-			"path":  fullPath,
-			"isDir": isDir,
-			"size":  size,
+			"name":     entry.Name(),
+			"path":     fullPath,
+			"isDir":    isDir,
+			"size":     size,
+			"editable": edit,
 		})
 	}
 
@@ -58,4 +62,13 @@ func ListHandler(c *gin.Context) {
 		"files": files,
 		"path":  path,
 	})
+}
+func IsEditable(fname string) bool {
+	switch filepath.Ext(fname) {
+	case ".md":
+		return true
+	case ".txt":
+		return true
+	}
+	return false
 }

@@ -21,7 +21,13 @@ func main() {
 		c.HTML(200, "文件目录.html", nil)
 	})
 	r.GET("/filelist/:namepath", func(c *gin.Context) {
-		c.HTML(200, "index.html", nil)
+		c.HTML(200, "文件列表.html", nil)
+	})
+	r.GET("/editor.html", func(c *gin.Context) {
+		c.HTML(200, "editor.html", nil)
+	})
+	r.GET("/website", func(c *gin.Context) {
+		c.HTML(200, "web_navigation.html", nil)
 	})
 	// 注册 API 路由
 	router.RegisterRoutes(r)

@@ -3,7 +3,7 @@ package db
 import (
 	"errors"
 	"fmt"
-	"gorm.io/driver/sqlite"
+	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 	"sync"
 	"time"
@@ -15,7 +15,7 @@ var (
 )
 
 // 初始化数据库连接，只执行一次
-func InitDB() *gorm.DB {
+func InitUserDB() *gorm.DB {
 	once.Do(func() {
 		var err error
 		dbInstance, err = gorm.Open(sqlite.Open("./tables/users.db"), &gorm.Config{})
@@ -27,6 +27,7 @@ func InitDB() *gorm.DB {
 			panic(fmt.Sprintf("AutoMigrate 失败: %v", err))
 		}
 	})
+
 	return dbInstance
 }
 
@@ -52,7 +53,7 @@ func (u *Users) TableName() string {
 
 // 创建单个用户
 func (u *Users) Create() error {
-	db := InitDB()
+	db := InitUserDB()
 	if db == nil {
 		return errors.New("数据库连接未初始化")
 	}
@@ -64,6 +65,6 @@ func BatchCreate(users []Users) error {
 	if len(users) == 0 {
 		return nil
 	}
-	db := InitDB()
+	db := InitUserDB()
 	return db.Create(&users).Error
 }

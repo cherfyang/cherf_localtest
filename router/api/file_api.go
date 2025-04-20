@@ -15,4 +15,7 @@ func RegisterFileRoutes(rf *gin.RouterGroup) {
 	rf.POST("/file/upload", file_handle.UploadHandler)
 	rf.GET("/file/list", file_handle.ListHandler)
 	rf.GET("/file/download", file_handle.DownloadFile)
+	rf.GET("/file/content", file_handle.LoadFile)
+	rf.GET("/video/play", file_handle.StreamVideo)
+	rf.POST("/file/save", file_handle.SaveFileContent)
 }

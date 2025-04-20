@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>文档编辑器</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vditor/dist/index.css" />
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: sans-serif;
+            background-color: #f5f5f5;
+        }
+
+        #toolbar {
+            background-color: #fff;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        #toolbar button {
+            padding: 6px 12px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        #toolbar button:hover {
+            background-color: #0056b3;
+        }
+
+        #vditor {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+
+<div id="toolbar">
+    <div>正在编辑：<span id="file-name">加载中...</span></div>
+    <button onclick="saveFile()">💾 保存</button>
+</div>
+
+<div id="vditor" style="height: calc(100vh - 50px);"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/vditor/dist/index.min.js"></script>
+<script>
+    let vditor;
+    let filePath = '';
+
+    window.addEventListener('DOMContentLoaded', () => {
+        const params = new URLSearchParams(window.location.search);
+        filePath = params.get('file');
+        document.getElementById('file-name').innerText = filePath ? decodeURIComponent(filePath).split('/').pop() : (filePath);
+
+        vditor = new Vditor('vditor', {
+            height: window.innerHeight - 50,
+            cache: { enable: false },
+            toolbarConfig: {
+                pin: true,
+            },
+            mode: 'sv', // 支持：sv（默认）、ir、wysiwyg
+            preview: {
+                markdown: {
+                    toc: true,
+                    mark: true
+                },
+                hljs: { enable: true }
+            },
+            after() {
+                if (!filePath) return;
+                fetch('/api/v1/file/content?file=' + encodeURIComponent(filePath))
+                    .then(res => res.text())
+                    .then(text => {
+                        vditor.setValue(text);
+                    })
+                    .catch(err => {
+                        alert("加载失败: " + err);
+                    });
+            }
+        });
+    });
+
+    function saveFile() {
+        const content = vditor.getValue();
+        if (!filePath) {
+            alert("未指定文件路径");
+            return;
+        }
+
+        fetch('/api/v1/file/save', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                path: filePath,
+                content: content
+            })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert("✅ 保存成功！");
+                } else {
+                    alert("❌ 保存失败：" + data.message);
+                }
+            })
+            .catch(err => {
+                alert("保存异常: " + err);
+            });
+    }
+</script>
+
+</body>
+</html>

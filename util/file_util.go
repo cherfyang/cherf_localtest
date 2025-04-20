@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -29,6 +30,8 @@ func GetFullpathByParam(name string) string {
 		path = "D:/name_file/cywFile/"
 	case "gky6666":
 		path = "D:/name_file/gky6666/"
+	case "video":
+		path = "D:/name_file/video/"
 	default:
 		path = "D:/HttpPublic/"
 	}
@@ -42,8 +45,19 @@ func CheckPath(decodedPath string) bool {
 		// 解码失败就拒绝
 		return false
 	}
-	if (a == "D:/HttpPublic/" || strings.Contains(a, "D:/name_file")) && a != "D:/name_file" {
-		return true
+	if a == "D:/name_file" {
+		return false
+	}
+	cond := map[int]bool{
+		2: strings.Contains(a, "D:\\HttpPublic"),
+		3: strings.Contains(a, "D:/HttpPublic"),
+		4: strings.Contains(a, "D:\\name_file\\"),
+		5: strings.Contains(a, "D:/name_file/"),
+	}
+	for i := 2; i < 6; i++ {
+		if cond[i] {
+			return true
+		}
 	}
 	return false
 }
@@ -153,18 +167,10 @@ func MaxLastBracketIndex(files []os.DirEntry, firstname string, lastname string)
 	}
 	return maxIndex + 1
 }
-func GetFielName(filename string, searchDir string) (string, error) {
-	name := filename
-	lastname := ""
-	// 获取最后一个点的位置
-	dotIndex := strings.LastIndex(filename, ".")
-	if dotIndex == -1 {
-		// 文件没有扩展名
-		lastname = ""
-	} else {
-		lastname = filename[dotIndex:] // 包含点
-	}
-	firstname := filename[:dotIndex-1]
+func GetFielName(path string) (string, error) {
+
+	searchDir, firstname, lastname := SplitFilePath(path)
+	name := firstname + "." + lastname
 
 	entries, err := os.ReadDir(searchDir)
 	if err != nil {
@@ -175,7 +181,7 @@ func GetFielName(filename string, searchDir string) (string, error) {
 	flag := false
 	//判断是否有entrie==filename
 	for _, entry := range entries {
-		if entry.Name() != filename {
+		if entry.Name() != name {
 			continue
 		} else {
 			flag = true
@@ -187,4 +193,14 @@ func GetFielName(filename string, searchDir string) (string, error) {
 	}
 	//
 	return name, nil
+}
+
+// SplitFilePath 分离路径，返回目录、文件名（无后缀）、扩展名（不带点）
+func SplitFilePath(fullPath string) (dir, nameWithoutExt, ext string) {
+	dir = filepath.Dir(fullPath)
+	base := filepath.Base(fullPath)       // 例如：readme.md
+	rawExt := filepath.Ext(base)          // 例如：.md
+	ext = strings.TrimPrefix(rawExt, ".") // 去掉前缀点
+	nameWithoutExt = strings.TrimSuffix(base, rawExt)
+	return
 }
