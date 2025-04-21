@@ -14,18 +14,18 @@ var DBweb *gorm.DB
 func InitWebDB() *gorm.DB {
 	once.Do(func() {
 		var err error
-		_ = os.MkdirAll("D:/code/cherf_localtest/db/tables", os.ModePerm)
+		_ = os.MkdirAll(PathDir, os.ModePerm)
 
-		dbInstance, err = gorm.Open(sqlite.Open("D:/code/cherf_localtest/db/tables/web.db"), &gorm.Config{})
+		DB_Webs, err = gorm.Open(sqlite.Open(WebPath), &gorm.Config{})
 		if err != nil {
 			panic(fmt.Sprintf("数据库连接失败: %v", err))
 		}
 		// 自动建表
-		if err := dbInstance.AutoMigrate(&Webs{}); err != nil {
+		if err := DB_Webs.AutoMigrate(&Webs{}); err != nil {
 			panic(fmt.Sprintf("AutoMigrate 失败: %v", err))
 		}
 	})
-	return dbInstance
+	return DB_Webs
 }
 
 type Webs struct {

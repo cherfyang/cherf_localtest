@@ -5,30 +5,27 @@ import (
 	"fmt"
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
-	"sync"
+	"os"
 	"time"
-)
-
-var (
-	dbInstance *gorm.DB
-	once       sync.Once
 )
 
 // 初始化数据库连接，只执行一次
 func InitUserDB() *gorm.DB {
 	once.Do(func() {
 		var err error
-		dbInstance, err = gorm.Open(sqlite.Open("./tables/users.db"), &gorm.Config{})
+		_ = os.MkdirAll(PathDir, os.ModePerm)
+
+		DB_Users, err = gorm.Open(sqlite.Open(UserPath), &gorm.Config{})
 		if err != nil {
 			panic(fmt.Sprintf("数据库连接失败: %v", err))
 		}
 		// 自动建表
-		if err := dbInstance.AutoMigrate(&Users{}); err != nil {
+		if err := DB_Users.AutoMigrate(&Users{}); err != nil {
 			panic(fmt.Sprintf("AutoMigrate 失败: %v", err))
 		}
 	})
 
-	return dbInstance
+	return DB_Users
 }
 
 // Users 表结构
