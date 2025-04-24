@@ -39,8 +39,10 @@ type Users struct {
 	Nickname  string    `gorm:"column:nickname;type:varchar(32)" json:"nickname"`        // 昵称
 	Role      string    `gorm:"column:role;type:varchar(20);default:'user'" json:"role"` // 角色（如 admin/user）
 	Status    int       `gorm:"column:status;type:int;default:1" json:"status"`          // 状态（1=正常，0=禁用）
-	CreatedAt time.Time `gorm:"column:created_at" json:"created_at"`                     // 创建时间
-	UpdatedAt time.Time `gorm:"column:updated_at" json:"updated_at"`                     // 更新时间
+	FullPath  string    `gorm:"column:full_path;type:varchar(255)" json:"full_path"`
+	Premisson string    `gorm:"column:premisson;type:varchar(255)" json:"premisson"`
+	CreatedAt time.Time `gorm:"column:created_at" json:"created_at"` // 创建时间
+	UpdatedAt time.Time `gorm:"column:updated_at" json:"updated_at"` // 更新时间
 }
 
 // 自定义表名

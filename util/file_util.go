@@ -2,9 +2,11 @@ package util
 
 import (
 	"bytes"
+	"cherf_localtest/db"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -15,27 +17,45 @@ import (
 	"time"
 )
 
-func GetFullpathByParam(name string) string {
-	path := "D:/UpdownFromHttp/"
-	switch name {
-	case "goProject":
-		path = "D:/GoProject/"
-	case "yfl":
-		path = "D:/name_file/yflFile/"
-	case "ych":
-		path = "D:/name_file/ychFile/"
-	case "lsn":
-		path = "D:/name_file/lsnFile/"
-	case "cyw":
-		path = "D:/name_file/cywFile/"
-	case "gky6666":
-		path = "D:/name_file/gky6666/"
-	case "video":
-		path = "D:/name_file/video/"
-	default:
-		path = "D:/HttpPublic/"
+var WinPath = map[string]string{}
+var unWinPqth = map[string]string{}
+var users []db.Users
+
+func init() {
+
+	err := db.InitUserDB().Find(&users).Error
+	if err == nil && len(users) > 0 {
+		for _, v := range users {
+			WinPath[v.Email] = v.FullPath
+		}
 	}
-	return path
+	if err != nil {
+		log.Println("初始化用户路径失败:", err)
+	}
+
+}
+
+// 如果不能全部路径就返回路径,否则返回 true
+func GetFullpathByParam(name string) (string, bool) {
+	permission := ""
+	for _, v := range users {
+		if v.Email == name {
+			permission = v.Premisson
+		}
+	}
+	if permission == "" {
+		return "err", false
+	}
+	path := "D:/UpdownFromHttp/"
+	switch permission {
+	case "user":
+		path = WinPath[name]
+	case "onlyD":
+		path = "D:"
+	case "all":
+		return "", true
+	}
+	return path, false
 
 }
 func CheckPath(decodedPath string) bool {
