@@ -1,7 +1,6 @@
 package file_handle
 
 import (
-	"cherf_localtest/util"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"os"
@@ -11,20 +10,23 @@ import (
 )
 
 func ListHandler(c *gin.Context) {
-	name := c.Query("namepath")
-	// 路径
-	rootPath, isAdmin := util.GetFullpathByParam(name)
-	// 获取查询参数
+	//name := c.Query("namepath")
+	//// 路径
+	//rootPath, isAdmin := util.GetFullpathByParam(name)
+	//// 获取查询参数
 	path := c.Query("path")
-	if path == "" {
-		path = rootPath
-	}
+	//if path == "" {
+	//	path = rootPath
+	//}
 
-	if !isAdmin && path != util.WinPath[name] {
-		c.JSON(http.StatusOK, gin.H{
-			"path": "当前目录禁止访问！！！",
-		})
-		return
+	//if !isAdmin && path != util.WinPath[name] {
+	//	c.JSON(http.StatusOK, gin.H{
+	//		"path": "当前目录禁止访问！！！",
+	//	})
+	//	return
+	//}
+	if path == "" {
+		path = "/Users"
 	}
 	// 读取目录内容
 	entries, err := os.ReadDir(path)

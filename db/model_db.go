@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	once      *sync.Once
+	once      sync.Once
 	DB_Users  *gorm.DB
 	DB_Webs   *gorm.DB
 	DB_IPInfo *gorm.DB
@@ -14,7 +14,8 @@ var (
 )
 
 const (
-	PathDir  = "D:/code/cherf_localtest/db/tables"
+	//PathDir  = "D:/code/cherf_localtest/db/tables"
+	PathDir  = "/Users/developer/GolandProjects/cherf_localtest/cherf_localtest/db/tables"
 	UserPath = PathDir + "/users.db"
 	WebPath  = PathDir + "/webs.db"
 )

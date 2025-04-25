@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -23,15 +22,15 @@ var users []db.Users
 
 func init() {
 
-	err := db.InitUserDB().Find(&users).Error
-	if err == nil && len(users) > 0 {
-		for _, v := range users {
-			WinPath[v.Email] = v.FullPath
-		}
-	}
-	if err != nil {
-		log.Println("初始化用户路径失败:", err)
-	}
+	//err := db.InitUserDB().Find(&users).Error
+	//if err == nil && len(users) > 0 {
+	//	for _, v := range users {
+	//		WinPath[v.Email] = v.FullPath
+	//	}
+	//}
+	//if err != nil {
+	//	fmt.Println("初始化用户路径失败:", err)
+	//}
 
 }
 
@@ -40,7 +39,7 @@ func GetFullpathByParam(name string) (string, bool) {
 	permission := ""
 	for _, v := range users {
 		if v.Email == name {
-			permission = v.Premisson
+			permission = v.Permisson
 		}
 	}
 	if permission == "" {
@@ -58,7 +57,7 @@ func GetFullpathByParam(name string) (string, bool) {
 	return path, false
 
 }
-func CheckPath(decodedPath string) bool {
+func CheckPermission(decodedPath string) bool {
 	a, err := url.QueryUnescape(decodedPath)
 	println(a, err)
 	if err != nil {
@@ -223,4 +222,70 @@ func SplitFilePath(fullPath string) (dir, nameWithoutExt, ext string) {
 	ext = strings.TrimPrefix(rawExt, ".") // 去掉前缀点
 	nameWithoutExt = strings.TrimSuffix(base, rawExt)
 	return
+}
+
+func RequestString(c *gin.Context) string {
+	str := ""
+	// 打印请求方法和URL
+	str += fmt.Sprintf("Method:%s\n", c.Request.Method)
+	str += fmt.Sprintf("URL:%s\n", c.Request.URL.String())
+
+	// 打印请求头
+	str += fmt.Sprintf("Headers:\n")
+	for k, v := range c.Request.Header {
+		str += fmt.Sprintf("  %s: %v\n", k, v)
+	}
+
+	// 打印请求路径参数
+	str += fmt.Sprintf("Path Params:\n")
+	for _, param := range c.Params {
+		str += fmt.Sprintf("  %s = %s\n", param.Key, param.Value)
+	}
+
+	// 打印Query参数
+	str += fmt.Sprintf("Query Params:\n")
+	for k, v := range c.Request.URL.Query() {
+		str += fmt.Sprintf("  %s = %v\n", k, v)
+	}
+
+	// 打印Form参数（支持 x-www-form-urlencoded、multipart）
+	c.Request.ParseForm()
+	str += fmt.Sprintf("Form Params:\n")
+	for k, v := range c.Request.PostForm {
+		str += fmt.Sprintf("  %s = %v\n", k, v)
+	}
+
+	bodyBytes, _ := io.ReadAll(c.Request.Body)
+	str += fmt.Sprintf("Body:\n")
+	str += fmt.Sprintf(string(bodyBytes))
+	c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+	return str
+}
+
+// 移动文件srcPath到dstPath
+func MoveFile(srcPath, dstPath string) error {
+	srcFile, err := os.Open(srcPath)
+	if err != nil {
+		return err
+	}
+	defer srcFile.Close()
+
+	dstFile, err := os.Create(dstPath)
+	if err != nil {
+		return err
+	}
+	defer dstFile.Close()
+
+	// 复制内容
+	_, err = io.Copy(dstFile, srcFile)
+	if err != nil {
+		return err
+	}
+
+	// 删除原文件
+	err = os.Remove(srcPath)
+	if err != nil {
+		return err
+	}
+	return nil
 }

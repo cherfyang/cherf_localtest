@@ -40,7 +40,7 @@ type Users struct {
 	Role      string    `gorm:"column:role;type:varchar(20);default:'user'" json:"role"` // 角色（如 admin/user）
 	Status    int       `gorm:"column:status;type:int;default:1" json:"status"`          // 状态（1=正常，0=禁用）
 	FullPath  string    `gorm:"column:full_path;type:varchar(255)" json:"full_path"`
-	Premisson string    `gorm:"column:premisson;type:varchar(255)" json:"premisson"`
+	Permisson string    `gorm:"column:permisson;type:varchar(255)" json:"permisson"`
 	CreatedAt time.Time `gorm:"column:created_at" json:"created_at"` // 创建时间
 	UpdatedAt time.Time `gorm:"column:updated_at" json:"updated_at"` // 更新时间
 }
