@@ -36,24 +36,24 @@ func init() {
 
 // 如果不能全部路径就返回路径,否则返回 true
 func GetFullpathByParam(name string) (string, bool) {
-	permission := ""
-	for _, v := range users {
-		if v.Email == name {
-			permission = v.Permisson
-		}
-	}
-	if permission == "" {
-		return "err", false
-	}
-	path := "D:/UpdownFromHttp/"
-	switch permission {
-	case "user":
-		path = WinPath[name]
-	case "onlyD":
-		path = "D:"
-	case "all":
-		return "", true
-	}
+	//permission := ""
+	//for _, v := range users {
+	//	if v.Email == name {
+	//		permission = v.Permisson
+	//	}
+	//}
+	//if permission == "" {
+	//	return "err", false
+	//}
+	path := "D:"
+	//switch permission {
+	//case "user":
+	//	path = WinPath[name]
+	//case "onlyD":
+	//	path = "D:"
+	//case "all":
+	//	return "", true
+	//}
 	return path, false
 
 }
