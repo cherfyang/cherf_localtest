@@ -45,7 +45,7 @@ func GetFullpathByParam(name string) (string, bool) {
 	//if permission == "" {
 	//	return "err", false
 	//}
-	path := "D:"
+	path := "D:/HttpPublic"
 	//switch permission {
 	//case "user":
 	//	path = WinPath[name]
