@@ -187,33 +187,77 @@
     document.getElementById('dplayer-container').style.display = 'none';
   }
 
-  function downloadSelected() {
+  async function downloadSelected() {
     const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
     if (checkboxes.length === 0) return;
-    document.getElementById('download-progress').style.display = 'inline';
 
-    checkboxes.forEach((checkbox) => {
-      const fullPath = checkbox.value.replace(/\\/g, '/');
-      fetch('/api/v1/file/download?file=' + encodeURIComponent(fullPath))
-              .then(response => {
-                if (response.ok) {
-                  return response.blob().then(blob => {
-                    const link = document.createElement('a');
-                    link.href = window.URL.createObjectURL(blob);
-                    link.download = fullPath.split('/').pop();
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                  });
-                } else {
-                  alert('文件下载失败：' + fullPath);
-                }
-              });
-    });
+    const progressEl = document.getElementById('download-progress');
+    progressEl.style.display = 'inline';
+    progressEl.textContent = `下载中 (0/${checkboxes.length})`;
 
-    setTimeout(() => {
-      document.getElementById('download-progress').style.display = 'none';
-    }, 3000);
+    let completed = 0;
+
+    for (const checkbox of checkboxes) {
+      try {
+        const fullPath = checkbox.value.replace(/\\/g, '/');
+        const fileName = fullPath.split('/').pop();
+
+        // 检查本地是否有部分下载的文件
+        const downloadedBytes = localStorage.getItem(`download-${fileName}`) || 0;
+
+        const response = await fetch('/api/v1/file/download?file=' + encodeURIComponent(fullPath), {
+          headers: downloadedBytes > 0 ? { 'Range': `bytes=${downloadedBytes}-` } : {}
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        // 获取文件总大小（用于进度计算）
+        const totalBytes = parseInt(
+                response.headers.get('Content-Length') ||
+                response.headers.get('Content-Range')?.split('/')[1] ||
+                0
+        );
+
+        // 创建可读流
+        const reader = response.body.getReader();
+        let receivedBytes = parseInt(downloadedBytes);
+
+        // 合并已下载的数据块
+        let chunks = [];
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          chunks.push(value);
+          receivedBytes += value.length;
+
+          // 保存下载进度（断点续传用）
+          localStorage.setItem(`download-${fileName}`, receivedBytes);
+        }
+
+        // 合并所有数据块并下载
+        const blob = new Blob(chunks);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        // 清除断点记录
+        localStorage.removeItem(`download-${fileName}`);
+        completed++;
+        progressEl.textContent = `下载中 (${completed}/${checkboxes.length})`;
+      } catch (error) {
+        console.error(`下载失败: ${checkbox.value}`, error);
+        alert(`下载失败: ${checkbox.value}\n错误: ${error.message}`);
+      }
+    }
+
+    progressEl.textContent = `下载完成 (${completed}/${checkboxes.length})`;
+    setTimeout(() => progressEl.style.display = 'none', 3000);
   }
 
   function uploadFile() {

@@ -56,8 +56,8 @@ func GetFullpathByParam(name string) (string, bool) {
 	//}
 	switch name {
 	case "/":
-		path = "D:/" + name
-	case "/ych":
+		path = "D:/"
+	case "ych":
 		path = "D:/学习资料"
 	default:
 		path = "D:/HttpPublic"
