@@ -10,7 +10,8 @@ func main() {
 	r := gin.Default()
 	r.LoadHTMLGlob("html/*")
 
-	// 静态文件（如有）
+	r.StaticFile("/favicon.ico", "D:\\code\\cherf_localtest\\static\\favicon.ico") // 指定文件路径
+
 	//r.Static("/static", "./static")
 
 	// 页面路由
